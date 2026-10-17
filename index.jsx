@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import Freddy from './src/Freddy';
 import { createRoot } from 'react-dom/client';
 import BackgroundMusic from './BackgroundMusic';
 import Info from './info';
@@ -10,7 +11,7 @@ const SFX = {
     door_close: new Audio('./ASSETS/SFX/office/door/SFXBible_12478.wav'),
 };
 
-
+SFX.light.loop = true;
 function GameMenu() {
     //SAVE FILE
     const save = JSON.parse(localStorage.getItem("save")) || {
@@ -19,7 +20,7 @@ function GameMenu() {
         volume: 100
     };
     //PROPERTIES
-    const SECONDS = 10; //how many seconds equal 1 hr
+    const SECONDS = 2; //how many seconds equal 1 hr
     const [isSwitchOn, setSwitch] = useState([false, false, false, false]); //switch on or off states
     const [display, setDisplay] = useState("main"); // displays certain scenes
     const [night, setNight] = useState(save.night); // night counter
@@ -63,10 +64,10 @@ function GameMenu() {
         let drainRate = 0;
         for (let i = 0; i < isSwitchOn.length; i++) {
             if (isSwitchOn[i] == true) {
-                if (i < 2) {
-                    drainRate += 0.25; //drain rate for light
+                if (i == SWITCH_CONTROL.LEFT_DOOR || i == SWITCH_CONTROL.RIGHT_DOOR) {
+                    drainRate += 0.5;
                 } else {
-                    drainRate += 0.5; //drain rate for door
+                    drainRate += 0.25;
                 }
             }
         }
@@ -75,15 +76,14 @@ function GameMenu() {
         } else {
             document.getElementById('battery-color').setAttribute("class", "text-bg-success");
         }
-        setBattery(Math.max(0, battery - drainRate)); //Applies battery drain rate and ensures it doesn't go below 0
+        setBattery(prev => Math.max(0, prev - drainRate)); //Applies battery drain rate and ensures it doesn't go below 0
     }
 
 
     /*    CHANGES IMG TO REFLECT CLICKS ON SWITCHES         */
     function toggleSwitch(index, pressed = null) {
         const updated = [...isSwitchOn];
-        updated[index] = pressed === null ? !updated[index] : pressed;
-
+        updated[index] = pressed == null ? !updated[index] : pressed;
         //LEFT SIDE SWITCHES
         if (index == SWITCH_CONTROL.LEFT_DOOR || index == SWITCH_CONTROL.LEFT_LIGHT) {
             if (updated[SWITCH_CONTROL.LEFT_DOOR] && updated[SWITCH_CONTROL.LEFT_LIGHT]) {
@@ -163,7 +163,7 @@ function GameMenu() {
    /*           Tracks seconds        */
     useEffect(() => {
         const interval = setInterval(() => {
-            setTime(time++);
+            setTime(prev => prev + 1);
         }, 1000);
         return () => clearInterval(interval);
     }
@@ -172,9 +172,9 @@ function GameMenu() {
    /*          Adds hour after 90 seconds              */
     useEffect(() => {
         if (time % SECONDS == 0 && time != 0) {
-            setHr((hr + 1) % 12);
+            setHr(prev => (prev + 1) % 12);
             if (hr == 6) {
-                setNight(night + 1);
+                setNight(prev => prev + 1);
             }
         }
     }, [time]);
@@ -182,7 +182,6 @@ function GameMenu() {
 
 
     useEffect(() => {
-        if (display != "game") return;
         save.night = night;
         setTime(0);
         setHr(12);
@@ -234,6 +233,55 @@ function GameMenu() {
 
 
 
+    //look around in REACT
+    useEffect(() => {
+    if (display != "game") return;
+
+    const viewport = document.getElementById("viewport");
+    const scene = document.getElementById("scene");
+
+    let targetX = 0;
+    let currentX = 0;
+    let maxPan = 0;
+    let init = false;
+
+    function mouseMovment(event) {
+        const rect = viewport.getBoundingClientRect();
+        const mouseX = Math.max(0, Math.min(1,
+            (event.clientX - rect.left) / rect.width
+        ));
+        targetX = -mouseX * maxPan;
+    }
+
+    function animate() {
+        currentX += (targetX - currentX) * 0.12;
+        scene.style.transform = `translateX(${currentX}px)`;
+        requestAnimationFrame(animate);
+    }
+
+    function updateBounds() {
+        let prevPan = maxPan;
+        maxPan = Math.max(0, scene.offsetWidth - viewport.clientWidth);
+        if (!init) {
+            targetX = -maxPan / 2;
+            currentX = targetX;
+            init = true;
+        } else if (prevPan != maxPan) {
+            if(prevPan > 0){
+                targetX = targetX / prevPan * maxPan;
+                currentX = currentX / prevPan * maxPan;inital
+            }
+        }
+        scene.style.transform = `translateX(${currentX}px)`;
+    }
+    updateBounds();
+    viewport.addEventListener("mousemove", mouseMovment);
+    document.getElementById("topLayer").addEventListener("load", updateBounds);
+    animate();
+}, [display]);
+
+
+
 
 
 
@@ -272,8 +320,11 @@ function GameMenu() {
     /*////////////////////////////END OF MAIN MENU FUNCTIONS////////////////////////////////*/
 
 
+<<<<<<< HEAD
 
 
+=======
+>>>>>>> 6ea3c3b05639cad18295f62615f07c483440aa9c
    /*                         SWITCH STATEMENTS FOR GOING BETWEEN SCENES                    */
     switch(display) {
         case "main":
@@ -301,33 +352,7 @@ function GameMenu() {
                 <button className="h2 mx-5 my-5 text-white flat-button" onClick={InfoMenu}>INFO</button>             {/*OPTIONS BUTTON*/}
             </div>
             </div>
-
-            {/*REMOVE THIS AFTER GETTING PANNING TO WORK IN REACT */}
-            <img
-                    src="/ASSETS/TEXTURES/OFFICE/switches/switch_left_door&light_off.png"
-                    id="left_switch"
-                    className="left-switch user-select-none"
-                    onPointerDown={switchClick}
-                    onPointerUp={releaseSwitch}
-                    draggable={false}
-                    />
-                    <img
-                    src="/ASSETS/TEXTURES/OFFICE/switches/switch_right_door&light_off.png"
-                    id="right_switch"
-                    className="right-switch user-select-none"
-                    onPointerDown={switchClick}
-                    onPointerUp={releaseSwitch}
-                    draggable={false}
-                    />
-        <div className="position-fixed m-4 battery-bar">
-            <div className="text-white text-center mb-1">Power Left: {Math.round(battery)}%</div>                       {/*BATTERY/POWER USAGE BAR*/}
-            <div className="progress bg-transparent border border-white rounded-3">
-                <div id="battery-color" className="text-bg-success" style={{ width: `${battery}%` }}></div>
-                </div>
-                </div>
-                <div className='nightText'>NIGHT: {night}
-                    <div className='timeText'>{hr} AM</div>
-                    </div>
+            
         </>
     );
     break;
@@ -405,9 +430,15 @@ function GameMenu() {
             <div className="progress bg-transparent border border-white rounded-3">
                 <div id="battery-color" className="text-bg-success" style={{ width: `${battery}%` }}></div>
                 </div>
+                <div className='camera-button'>
+                    <img 
+                    className='camera-button' 
+                    src="/ASSETS/TEXTURES/OFFICE/camera_button.png" />
+                </div>
                 </div>
                 <div className='nightText'>NIGHT: {night}
                     <div className='timeText'>{hr} AM</div>
+<<<<<<< HEAD
                     </div>
                     </>
     ) 
@@ -415,6 +446,10 @@ function GameMenu() {
     case "info":
     return (
         <Info onExit={() => setDisplay("main")} />
+=======
+                </div>
+        </>
+>>>>>>> 6ea3c3b05639cad18295f62615f07c483440aa9c
     );
 }
 }
