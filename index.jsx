@@ -1,11 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
 import { createRoot } from 'react-dom/client';
+import BackgroundMusic from './BackgroundMusic';
+import Info from './info';
 
 //PUT ALL SFX HERE SO THEY CAN BE AFFECTED BY VOLUME CONTROL
 const SFX = {
     light: new Audio('./ASSETS/SFX/office/light/BallastHumMedium2.wav'),
     click: new Audio('./ASSETS/SFX/MENU/sfx_menu_confirm.mp3'),
-    door_close: new Audio('./ASSETS/SFX/office/door/SFXBible_12478.wav')
+    door_close: new Audio('./ASSETS/SFX/office/door/SFXBible_12478.wav'),
 };
 
 
@@ -261,10 +263,13 @@ function GameMenu() {
         setDisplay("options");
     }
 
+    function InfoMenu() {
+        playSFX(SFX.click);
+        setDisplay("info")
+    }
+
 
     /*////////////////////////////END OF MAIN MENU FUNCTIONS////////////////////////////////*/
-
-
 
 
 
@@ -274,6 +279,8 @@ function GameMenu() {
         case "main":
     return (
         <>
+
+        <BackgroundMusic />
         <video className="background-video" autoPlay loop playsInline muted>
             <source src="ASSETS/VIDEOS/main_menu_background.mp4" type="video/mp4" />                                       {/* BACKGROUND VIDEO */}  
         </video>
@@ -289,6 +296,9 @@ function GameMenu() {
             </div>
             <div className="align-menu-button">
                 <button className="h2 mx-5 my-5 text-white flat-button" onClick={optionsMenu}>OPTIONS</button>             {/*OPTIONS BUTTON*/}
+            </div>
+            <div className="align-menu-button">
+                <button className="h2 mx-5 my-5 text-white flat-button" onClick={InfoMenu}>INFO</button>             {/*OPTIONS BUTTON*/}
             </div>
             </div>
 
@@ -400,6 +410,11 @@ function GameMenu() {
                     <div className='timeText'>{hr} AM</div>
                     </div>
                     </>
+    ) 
+    break
+    case "info":
+    return (
+        <Info onExit={() => setDisplay("main")} />
     );
 }
 }
